@@ -239,9 +239,9 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
   <!-- 음향 효과 -->
   <div id="fxTab" style="display:none">
-    <div class="card">
-      <div class="sec-title" id="lFxTitle" style="margin-bottom:16px"></div>
-      <div id="fxGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    <div class="card" style="max-width:560px;margin:0 auto">
+      <div class="sec-title" id="lFxTitle" style="margin-bottom:12px;text-align:center"></div>
+      <div id="fxGrid" style="display:flex;flex-direction:column;gap:6px"></div>
     </div>
   </div>
 </div>
@@ -680,13 +680,13 @@ function playFx(id,btn){
 
 function renderFxGrid(){
   const list=lang==='ko'?FX_KO:FX_EN;
-  const grid=document.getElementById('fxGrid');
   const playTxt=lang==='ko'?'재생':'Play';
   const stopTxt=lang==='ko'?'정지':'Stop';
   const volTxt=lang==='ko'?'음향 효과 볼륨':'FX Volume';
+  const grid=document.getElementById('fxGrid');
 
   grid.innerHTML=`
-    <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:4px">
+    <div style="max-width:480px;margin:0 auto;width:100%;display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;margin-bottom:4px">
       <span style="font-size:12px;color:var(--text2);white-space:nowrap">🔊 ${volTxt}</span>
       <input type="range" id="fxVol" min="0" max="100" value="70" style="flex:1;accent-color:var(--accent)" oninput="setFxVol()">
       <span style="font-size:12px;color:var(--text3);min-width:32px;text-align:right" id="fxVolNum">70%</span>
@@ -695,32 +695,18 @@ function renderFxGrid(){
 
   list.forEach(fx=>{
     const card=document.createElement('div');
-    card.style.cssText='background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:12px;';
+    card.style.cssText='background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;';
 
-    if(fx.dual){
-      const isA=fxPlaying===fx.id+'_a';
-      const isB=fxPlaying===fx.id+'_b';
-      card.style.gridColumn='1/-1';
-      card.innerHTML=`
-        <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">${fx.name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.4">${fx.desc}</div>
-        <div style="display:flex;gap:8px">
-          <button class="fx-btn${isA?' playing':''}" data-id="${fx.id}_a" data-play="${fx.labelA}" data-stop="${stopTxt}"
-            style="flex:1;padding:7px;border-radius:6px;border:0.5px solid ${isA?'var(--danger)':'var(--border2)'};background:${isA?'transparent':'var(--accent)'};color:${isA?'var(--danger)':'#fff'};font-size:12px;cursor:pointer;font-family:inherit"
-            onclick="playFx('${fx.id}_a',this)">${isA?stopTxt:fx.labelA}</button>
-          <button class="fx-btn${isB?' playing':''}" data-id="${fx.id}_b" data-play="${fx.labelB}" data-stop="${stopTxt}"
-            style="flex:1;padding:7px;border-radius:6px;border:0.5px solid ${isB?'var(--danger)':'var(--border2)'};background:${isB?'transparent':'var(--bg2)'};color:${isB?'var(--danger)':'var(--text2)'};font-size:12px;cursor:pointer;font-family:inherit"
-            onclick="playFx('${fx.id}_b',this)">${isB?stopTxt:fx.labelB}</button>
-        </div>`;
-    } else {
-      const isPlaying=fxPlaying===fx.id;
-      card.innerHTML=`
-        <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">${fx.name}</div>
-        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.4">${fx.desc}</div>
-        <button class="fx-btn${isPlaying?' playing':''}" data-id="${fx.id}" data-play="${playTxt}" data-stop="${stopTxt}"
-          style="width:100%;padding:6px;border-radius:6px;border:0.5px solid ${isPlaying?'var(--danger)':'var(--border2)'};background:${isPlaying?'transparent':'var(--accent)'};color:${isPlaying?'var(--danger)':'#fff'};font-size:12px;cursor:pointer;font-family:inherit"
-          onclick="playFx('${fx.id}',this)">${isPlaying?stopTxt:playTxt}</button>`;
-    }
+    const isPlaying=fxPlaying===fx.id;
+    card.innerHTML=`
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fx.name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${fx.desc}</div>
+      </div>
+      <button class="fx-btn${isPlaying?' playing':''}" data-id="${fx.id}" data-play="${playTxt}" data-stop="${stopTxt}"
+        style="flex-shrink:0;padding:5px 14px;border-radius:6px;border:0.5px solid ${isPlaying?'var(--danger)':'var(--border2)'};background:${isPlaying?'transparent':'var(--accent)'};color:${isPlaying?'var(--danger)':'#fff'};font-size:12px;cursor:pointer;font-family:inherit;white-space:nowrap"
+        onclick="playFx('${fx.id}',this)">${isPlaying?stopTxt:playTxt}</button>`;
+
     grid.appendChild(card);
   });
   document.getElementById('lFxTitle').textContent=lang==='ko'?'음향 효과 라이브러리':'Audio Effects Library';
