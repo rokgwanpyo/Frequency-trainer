@@ -6,111 +6,152 @@
 <title>주파수 트레이너</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh}
-.container{max-width:720px;margin:0 auto;padding:2rem 1rem}
-h1{font-size:22px;font-weight:500;margin-bottom:4px}
-.sub{font-size:13px;color:#888;margin-bottom:2px}
-.credit{font-size:12px;color:#bbb;margin-bottom:2rem}
-.tabs{display:flex;gap:6px;margin-bottom:1.5rem;flex-wrap:wrap}
-.tab{padding:7px 18px;border-radius:8px;font-size:13px;cursor:pointer;border:0.5px solid #ccc;background:transparent;color:#888;font-family:inherit}
-.tab.on{background:#1a1a18;color:#fff;border-color:transparent}
-.card{background:#fff;border:0.5px solid #e0e0da;border-radius:12px;padding:1.25rem;margin-bottom:1rem}
-.sec-title{font-size:12px;font-weight:500;color:#666;margin-bottom:10px}
-input[type=range]{width:100%;accent-color:#1a1a18}
+:root{
+  --bg:#111;--bg2:#1a1a1a;--bg3:#222;
+  --border:#2e2e2e;--border2:#444;
+  --text:#e8e8e8;--text2:#aaa;--text3:#666;
+  --accent:#4a90d9;--danger:#e05555;--success:#4caf7d;
+  --card-bg:#1a1a1a;--page-bg:#111;
+}
+.light{
+  --bg:#f5f5f3;--bg2:#fff;--bg3:#f0f0ee;
+  --border:#e0e0da;--border2:#ccc;
+  --text:#1a1a18;--text2:#666;--text3:#aaa;
+  --accent:#3a7bd5;--danger:#c0392b;--success:#1a6640;
+  --card-bg:#fff;--page-bg:#f5f5f3;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;transition:background .2s,color .2s}
+.header{text-align:center;padding:2rem 1rem 1.5rem;border-bottom:0.5px solid var(--border)}
+.header h1{font-size:24px;font-weight:500;color:var(--text);margin-bottom:6px;letter-spacing:0.05em}
+.header .sub{font-size:13px;color:var(--text2);margin-bottom:4px}
+.header .credit{font-size:12px;color:var(--text3)}
+.header-btns{display:flex;gap:8px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.hbtn{padding:4px 14px;border-radius:99px;border:0.5px solid var(--border2);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;font-family:inherit;transition:all .15s}
+.hbtn:hover{border-color:var(--accent);color:var(--accent)}
+.container{max-width:700px;margin:0 auto;padding:1.5rem 1rem 3rem}
+.tabs{display:flex;gap:0;margin-bottom:1.5rem;border:0.5px solid var(--border);border-radius:8px;overflow:hidden}
+.tab{flex:1;padding:10px;font-size:13px;cursor:pointer;border:none;background:transparent;color:var(--text2);font-family:inherit;border-right:0.5px solid var(--border);transition:all .1s}
+.tab:last-child{border-right:none}
+.tab.on{background:var(--bg3);color:var(--text)}
+.tab:hover:not(.on){background:var(--bg2)}
+.card{background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem}
+.sec-title{font-size:12px;color:var(--text3);margin-bottom:10px;letter-spacing:0.06em}
+input[type=range]{width:100%;accent-color:var(--accent)}
 .vol-row{display:flex;align-items:center;gap:10px}
-.vol-label{font-size:12px;color:#888;white-space:nowrap;min-width:60px}
-.play-btn{width:100%;padding:12px;border-radius:8px;border:none;font-size:15px;cursor:pointer;font-family:inherit;font-weight:500;margin-bottom:1rem}
-.play-btn.on{background:#fff0f0;color:#c0392b;border:0.5px solid #f5c6c2}
-.play-btn.off{background:#1a1a18;color:#fff}
-.divider{border:none;border-top:0.5px solid #eee;margin:1.25rem 0}
+.vol-label{font-size:12px;color:var(--text2);white-space:nowrap;min-width:52px}
+.play-btn{width:100%;padding:12px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:500;margin-bottom:1rem;transition:all .15s;border:none}
+.play-btn.on{background:transparent;color:var(--danger);border:0.5px solid var(--danger) !important}
+.play-btn.off{background:var(--accent);color:#fff}
+.play-btn.off:hover{opacity:.85}
+.divider{border:none;border-top:0.5px solid var(--border);margin:1.25rem 0}
 .freq-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:1rem}
-.freq-btn{padding:8px 4px;border-radius:8px;border:0.5px solid #ddd;background:transparent;color:#888;font-size:12px;cursor:pointer;text-align:center;font-family:inherit;line-height:1.4}
-.freq-btn:hover{background:#f5f5f3}
-.freq-btn.on{background:#eef4ff;color:#3a6fc4;border-color:#b5d4f4}
-.eq-display{text-align:center;margin-bottom:1.25rem}
-.eq-freq{font-size:36px;font-weight:500;color:#1a1a18;line-height:1}
-.eq-db{font-size:20px;font-weight:500;margin-top:4px}
-.eq-db.boost{color:#c0392b}
-.eq-db.cut{color:#3a6fc4}
-.eq-db.flat{color:#aaa}
-.eq-desc{font-size:13px;color:#888;margin-top:6px;min-height:18px}
+.freq-btn{padding:8px 4px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;text-align:center;font-family:inherit;line-height:1.5;transition:all .1s}
+.freq-btn:hover{border-color:var(--border2);color:var(--text)}
+.freq-btn.on{background:var(--bg3);color:var(--accent);border-color:var(--accent)}
+.eq-display{text-align:center;margin-bottom:1.25rem;padding:.75rem 0}
+.eq-freq{font-size:44px;font-weight:300;color:var(--text);line-height:1}
+.eq-db{font-size:20px;font-weight:400;margin-top:6px}
+.eq-db.boost{color:var(--danger)}
+.eq-db.cut{color:var(--accent)}
+.eq-db.flat{color:var(--text3)}
+.eq-desc{font-size:13px;color:var(--text2);margin-top:8px;min-height:18px}
 .db-btns{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
-.db-btn{padding:6px 14px;border-radius:8px;border:0.5px solid #ddd;background:transparent;font-size:13px;cursor:pointer;font-family:inherit;color:#888}
-.db-btn:hover{background:#f5f5f3}
-.db-btn.on{border-color:#f5c6c2;background:#fff0f0;color:#c0392b}
-.db-btn.neg.on{border-color:#b5d4f4;background:#eef4ff;color:#3a6fc4}
-.reset-btn{padding:6px 14px;border-radius:8px;border:0.5px solid #ddd;background:transparent;font-size:12px;cursor:pointer;font-family:inherit;color:#aaa;margin-left:auto}
-.reset-btn:hover{background:#f5f5f3;color:#1a1a18}
-.status{font-size:12px;color:#888;background:#fafaf8;border-radius:8px;padding:8px 12px;text-align:center;margin-top:12px}
+.db-btn{padding:6px 14px;border-radius:6px;border:0.5px solid var(--border);background:transparent;font-size:13px;cursor:pointer;font-family:inherit;color:var(--text2);transition:all .1s}
+.db-btn:hover{border-color:var(--border2);color:var(--text)}
+.db-btn.on{border-color:var(--danger);color:var(--danger);background:rgba(224,85,85,0.1)}
+.db-btn.neg.on{border-color:var(--accent);color:var(--accent);background:rgba(74,144,217,0.1)}
+.reset-btn{padding:6px 14px;border-radius:6px;border:0.5px solid var(--border);background:transparent;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text3);margin-left:auto;transition:all .1s}
+.reset-btn:hover{color:var(--text);border-color:var(--border2)}
+.status{font-size:13px;color:var(--text2);background:var(--bg3);border-radius:6px;padding:9px 12px;text-align:center;margin-top:12px}
 .oct-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0}
-.oct-btn{padding:7px 4px;border-radius:8px;border:0.5px solid #ddd;background:transparent;color:#888;font-size:12px;cursor:pointer;text-align:center;font-family:inherit}
-.oct-btn:hover{background:#f5f5f3}
-.oct-btn.on{background:#eef4ff;color:#3a6fc4;border-color:#b5d4f4}
-.freq-display{text-align:center;margin-bottom:1.25rem}
-.freq-num{font-size:48px;font-weight:500;color:#1a1a18;line-height:1}
-.freq-unit{font-size:16px;color:#aaa;margin-top:4px}
-.freq-desc{font-size:13px;color:#3a6fc4;margin-top:6px;min-height:20px}
+.oct-btn{padding:7px 4px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;text-align:center;font-family:inherit;transition:all .1s}
+.oct-btn:hover{color:var(--text);border-color:var(--border2)}
+.oct-btn.on{color:var(--accent);border-color:var(--accent);background:var(--bg3)}
+.freq-display{text-align:center;margin-bottom:1.25rem;padding:.75rem 0}
+.freq-num{font-size:52px;font-weight:300;color:var(--text);line-height:1}
+.freq-unit{font-size:15px;color:var(--text3);margin-top:6px}
+.freq-desc{font-size:13px;color:var(--text2);margin-top:8px;min-height:20px}
 
 /* 퀴즈 */
 .quiz-area{text-align:center}
 .quiz-type-tabs{display:flex;gap:6px;margin-bottom:1.25rem;justify-content:center}
-.qt-tab{padding:6px 16px;border-radius:8px;font-size:13px;cursor:pointer;border:0.5px solid #ddd;background:transparent;color:#888;font-family:inherit}
-.qt-tab.on{background:#1a1a18;color:#fff;border-color:transparent}
-.score-row{display:flex;justify-content:center;gap:24px;margin-bottom:1rem}
+.qt-tab{padding:7px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:0.5px solid var(--border);background:transparent;color:var(--text2);font-family:inherit;transition:all .1s}
+.qt-tab.on{background:var(--bg3);color:var(--text);border-color:var(--border2)}
+.score-row{display:flex;justify-content:center;gap:32px;margin-bottom:1.5rem}
 .score-item{text-align:center}
-.score-num{font-size:24px;font-weight:500;color:#1a1a18}
-.score-label{font-size:11px;color:#aaa}
-.quiz-question{font-size:13px;color:#888;margin-bottom:.5rem}
-.quiz-freq{font-size:40px;font-weight:500;color:#1a1a18;margin:0 0 4px}
-.quiz-hint{font-size:13px;color:#aaa;margin-bottom:1rem;min-height:18px}
+.score-num{font-size:28px;font-weight:300;color:var(--text)}
+.score-label{font-size:11px;color:var(--text3);margin-top:2px}
+.quiz-question{font-size:13px;color:var(--text2);margin-bottom:.5rem}
+.quiz-freq{font-size:44px;font-weight:300;color:var(--text);margin:0 0 6px}
+.quiz-hint{font-size:13px;color:var(--text3);margin-bottom:1rem;min-height:18px}
 .listen-row{display:flex;gap:8px;margin-bottom:1rem}
-.listen-btn{flex:1;padding:10px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:500;border:none;background:#1a1a18;color:#fff}
-.listen-btn.playing{background:#fff0f0;color:#c0392b;border:0.5px solid #f5c6c2}
+.listen-btn{flex:1;padding:11px;border-radius:8px;font-size:14px;cursor:pointer;font-family:inherit;font-weight:500;border:none;background:var(--accent);color:#fff;transition:all .15s}
+.listen-btn:hover{opacity:.85}
+.listen-btn.playing{background:transparent !important;color:var(--danger) !important;border:0.5px solid var(--danger) !important}
 .vol-quiz-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
 .quiz-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:1rem}
-.quiz-opt{padding:10px;border-radius:8px;border:0.5px solid #ddd;background:transparent;color:#1a1a18;font-size:13px;cursor:pointer;font-family:inherit}
-.quiz-opt:hover{background:#f5f5f3}
-.quiz-opt.correct{background:#f0faf5;color:#1a6640;border-color:#b2dfc7}
-.quiz-opt.wrong{background:#fff0f0;color:#c0392b;border-color:#f5c6c2}
-.result-msg{font-size:14px;min-height:20px;margin-bottom:1rem;font-weight:500}
-.result-msg.ok{color:#1a6640}
-.result-msg.ng{color:#c0392b}
-.next-btn{padding:9px 24px;border-radius:8px;border:0.5px solid #ddd;background:transparent;color:#1a1a18;font-size:14px;cursor:pointer;font-family:inherit}
-.badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:99px;background:#fff0f0;color:#c0392b;margin-bottom:1rem}
+.quiz-opt{padding:11px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;transition:all .1s}
+.quiz-opt:hover{border-color:var(--border2);background:var(--bg3)}
+.quiz-opt.correct{background:rgba(76,175,125,0.12);color:var(--success);border-color:var(--success)}
+.quiz-opt.wrong{background:rgba(224,85,85,0.12);color:var(--danger);border-color:var(--danger)}
+.result-msg{font-size:14px;min-height:22px;margin-bottom:1rem;font-weight:500}
+.result-msg.ok{color:var(--success)}
+.result-msg.ng{color:var(--danger)}
+.next-btn{padding:9px 28px;border-radius:6px;border:0.5px solid var(--border2);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;font-family:inherit;transition:all .1s}
+.next-btn:hover{color:var(--text);border-color:var(--text2)}
+
+/* EQ 퀴즈 옵션 */
+.eq-options{background:var(--bg3);border-radius:8px;padding:12px;margin-bottom:1rem}
+.eq-opt-title{font-size:11px;color:var(--text3);margin-bottom:8px;letter-spacing:0.06em}
+.eq-opt-row{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.eq-opt-btn{padding:5px 12px;border-radius:6px;border:0.5px solid var(--border2);background:transparent;font-size:12px;cursor:pointer;font-family:inherit;color:var(--text2);transition:all .1s}
+.eq-opt-btn:hover{color:var(--text);border-color:var(--text2)}
+.eq-opt-btn.on{border-color:var(--accent);color:var(--accent);background:rgba(74,144,217,0.1)}
+.eq-opt-btn.boost-on{border-color:var(--danger);color:var(--danger);background:rgba(224,85,85,0.1)}
+.badge-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:1rem}
+.badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:99px;border:0.5px solid}
+.badge.boost{background:rgba(224,85,85,0.1);color:var(--danger);border-color:var(--danger)}
+.badge.cut{background:rgba(74,144,217,0.1);color:var(--accent);border-color:var(--accent)}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>🎚️ 주파수 트레이너</h1>
-  <p class="sub">음향 엔지니어를 위한 청음 훈련 툴</p>
-  <p class="credit">MADE BY : SOUND ENGINEER · HGP</p>
+<div class="header">
+  <h1 id="mainTitle">🎚️ 주파수 트레이너</h1>
+  <p class="sub" id="mainSub">음향 엔지니어를 위한 청음 훈련 툴</p>
+  <p class="credit">MADE BY : HGP 🇰🇷</p>
+  <div class="header-btns">
+    <button class="hbtn" id="langBtn" onclick="toggleLang()">English</button>
+    <button class="hbtn" id="themeBtn" onclick="toggleTheme()">☀️ 라이트 모드</button>
+  </div>
+</div>
 
+<div class="container">
   <div class="tabs">
-    <button class="tab on" onclick="switchTab('pink')">핑크노이즈 EQ</button>
-    <button class="tab" onclick="switchTab('gen')">주파수 발생기</button>
-    <button class="tab" onclick="switchTab('quiz')">청음 퀴즈</button>
+    <button class="tab on" id="tab0" onclick="switchTab('pink')"></button>
+    <button class="tab" id="tab1" onclick="switchTab('gen')"></button>
+    <button class="tab" id="tab2" onclick="switchTab('quiz')"></button>
   </div>
 
   <!-- 핑크노이즈 EQ -->
   <div id="pinkTab">
     <div class="card">
-      <button class="play-btn off" id="pinkPlayBtn" onclick="toggleNoise()">핑크노이즈 재생</button>
+      <button class="play-btn off" id="pinkPlayBtn" onclick="toggleNoise()"></button>
       <div class="vol-row">
-        <span class="vol-label">볼륨</span>
+        <span class="vol-label" id="lVol1"></span>
         <input type="range" id="noiseVol" min="0" max="100" value="40" style="flex:1" oninput="setNoiseVol()">
         <span class="vol-label" id="noiseVolNum" style="text-align:right">40%</span>
       </div>
     </div>
     <div class="card">
-      <div class="sec-title">주파수 선택</div>
+      <div class="sec-title" id="lFreqSel"></div>
       <div class="freq-grid" id="freqGrid"></div>
       <div class="eq-display">
         <div class="eq-freq" id="eqFreq">1kHz</div>
         <div class="eq-db flat" id="eqDb">0 dB</div>
-        <div class="eq-desc" id="eqDesc">보컬 존재감, 전화기 소리 대역</div>
+        <div class="eq-desc" id="eqDesc"></div>
       </div>
       <div class="divider"></div>
-      <div class="sec-title" style="margin-bottom:6px">BOOST</div>
+      <div class="sec-title" id="lBoost" style="margin-bottom:6px"></div>
       <div class="db-btns">
         <button class="db-btn" onclick="setDb(3)">+3</button>
         <button class="db-btn" onclick="setDb(6)">+6</button>
@@ -119,7 +160,7 @@ input[type=range]{width:100%;accent-color:#1a1a18}
         <button class="db-btn" onclick="setDb(15)">+15</button>
         <button class="reset-btn" onclick="setDb(0)">FLAT</button>
       </div>
-      <div class="sec-title" style="margin-bottom:6px">CUT</div>
+      <div class="sec-title" id="lCut" style="margin-bottom:6px"></div>
       <div class="db-btns">
         <button class="db-btn neg" onclick="setDb(-3)">-3</button>
         <button class="db-btn neg" onclick="setDb(-6)">-6</button>
@@ -127,7 +168,7 @@ input[type=range]{width:100%;accent-color:#1a1a18}
         <button class="db-btn neg" onclick="setDb(-12)">-12</button>
         <button class="db-btn neg" onclick="setDb(-15)">-15</button>
       </div>
-      <div class="status" id="statusBar">핑크노이즈를 먼저 재생하세요</div>
+      <div class="status" id="statusBar"></div>
     </div>
   </div>
 
@@ -137,55 +178,60 @@ input[type=range]{width:100%;accent-color:#1a1a18}
       <div class="freq-display">
         <div class="freq-num" id="freqNum">1000</div>
         <div class="freq-unit">Hz</div>
-        <div class="freq-desc" id="freqDesc">보컬 존재감, 전화기 소리 대역</div>
+        <div class="freq-desc" id="freqDesc"></div>
       </div>
       <input type="range" id="freqSlider" min="0" max="100" value="50" oninput="onSlider()">
-      <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:8px">
         <span>20Hz</span><span>200Hz</span><span>2kHz</span><span>20kHz</span>
       </div>
       <div class="oct-grid" id="octGrid"></div>
-      <div class="vol-row" style="margin-top:10px">
-        <span class="vol-label">볼륨</span>
+      <div class="vol-row" style="margin-top:12px">
+        <span class="vol-label" id="lVol2"></span>
         <input type="range" id="tonVol" min="0" max="100" value="30" style="flex:1" oninput="setToneVol()">
         <span class="vol-label" id="toneVolNum" style="text-align:right">30%</span>
       </div>
-      <button class="play-btn off" id="toneBtn" onclick="toggleTone()" style="margin-top:12px">톤 재생</button>
+      <button class="play-btn off" id="toneBtn" onclick="toggleTone()" style="margin-top:12px"></button>
     </div>
   </div>
 
   <!-- 청음 퀴즈 -->
   <div id="quizTab" style="display:none">
     <div class="card quiz-area">
-
       <div class="quiz-type-tabs">
-        <button class="qt-tab on" onclick="switchQType('tone')">순음 퀴즈</button>
-        <button class="qt-tab" onclick="switchQType('pink')">핑크노이즈 EQ 퀴즈</button>
+        <button class="qt-tab on" id="qtTone" onclick="switchQType('tone')"></button>
+        <button class="qt-tab" id="qtPink" onclick="switchQType('pink')"></button>
       </div>
 
       <div class="score-row">
-        <div class="score-item"><div class="score-num" id="sCorrect">0</div><div class="score-label">정답</div></div>
-        <div class="score-item"><div class="score-num" id="sTotal">0</div><div class="score-label">총 문제</div></div>
-        <div class="score-item"><div class="score-num" id="sRate">-</div><div class="score-label">정답률</div></div>
+        <div class="score-item"><div class="score-num" id="sCorrect">0</div><div class="score-label" id="lCorrect"></div></div>
+        <div class="score-item"><div class="score-num" id="sTotal">0</div><div class="score-label" id="lTotal"></div></div>
+        <div class="score-item"><div class="score-num" id="sRate">-</div><div class="score-label" id="lRate"></div></div>
       </div>
 
-      <div class="quiz-question" id="quizQuestion">이 주파수는 어느 대역일까요?</div>
-      <div id="pinkBadge" style="display:none"><span class="badge">핑크노이즈 +6dB BOOST</span></div>
+      <!-- EQ퀴즈 옵션 (핑크노이즈 탭일때만) -->
+      <div id="eqQuizOptions" style="display:none">
+        <div class="eq-options">
+          <div class="eq-opt-title" id="lEqOptTitle"></div>
+          <div class="eq-opt-row" id="eqOptRow"></div>
+        </div>
+      </div>
+
+      <div class="quiz-question" id="quizQuestion"></div>
+      <div class="badge-row" id="quizBadge" style="display:none"></div>
       <div class="quiz-freq" id="quizFreq">?</div>
-      <div class="quiz-hint" id="quizHint">재생 버튼을 눌러 들어보세요</div>
+      <div class="quiz-hint" id="quizHint"></div>
 
       <div class="vol-quiz-row">
-        <span class="vol-label" style="min-width:50px;font-size:12px;color:#888">볼륨</span>
+        <span class="vol-label" id="lVol3" style="min-width:50px;font-size:12px;color:var(--text2)"></span>
         <input type="range" id="quizVol" min="0" max="100" value="40" style="flex:1" oninput="setQuizVol()">
-        <span style="font-size:12px;color:#888;min-width:36px;text-align:right" id="quizVolNum">40%</span>
+        <span style="font-size:12px;color:var(--text2);min-width:36px;text-align:right" id="quizVolNum">40%</span>
       </div>
-
       <div class="listen-row">
-        <button class="listen-btn" id="listenBtn" onclick="toggleQuizPlay()">들어보기</button>
+        <button class="listen-btn" id="listenBtn" onclick="toggleQuizPlay()"></button>
       </div>
-
       <div class="quiz-grid" id="quizGrid"></div>
       <div class="result-msg" id="resultMsg"></div>
-      <button class="next-btn" id="nextBtn" onclick="nextQuiz()" style="display:none">다음 문제</button>
+      <button class="next-btn" id="nextBtn" onclick="nextQuiz()" style="display:none"></button>
     </div>
   </div>
 </div>
@@ -193,75 +239,182 @@ input[type=range]{width:100%;accent-color:#1a1a18}
 <script>
 const FREQS=[31,63,125,250,500,1000,2000,4000,8000,16000];
 const FNAMES={31:'31Hz',63:'63Hz',125:'125Hz',250:'250Hz',500:'500Hz',1000:'1kHz',2000:'2kHz',4000:'4kHz',8000:'8kHz',16000:'16kHz'};
-const DESCS={31:'초저역 — 공간감, 압력감',63:'저역 — 킥드럼 펀치, 베이스 바디',125:'저중역 — 웜함, 탁함의 경계',250:'중저역 — 보컬 두께감, 뭉침 원인',500:'중역 — 기타 바디, 박스 소리',1000:'보컬 존재감, 전화기 소리 대역',2000:'고중역 — 어택감, 치찰음 시작',4000:'고역 — 스네어 어택, 치찰음',8000:'초고역 — 심벌 광택, 공기감',16000:'최고역 — 공기감, 반짝임'};
+const DESCS_KO={31:'초저역 — 공간감, 압력감',63:'저역 — 킥드럼 펀치, 베이스 바디',125:'저중역 — 웜함, 탁함의 경계',250:'중저역 — 보컬 두께감, 뭉침 원인',500:'중역 — 기타 바디, 박스 소리',1000:'보컬 존재감, 전화기 소리 대역',2000:'고중역 — 어택감, 치찰음 시작',4000:'고역 — 스네어 어택, 치찰음',8000:'초고역 — 심벌 광택, 공기감',16000:'최고역 — 공기감, 반짝임'};
+const DESCS_EN={31:'Sub Bass — Rumble, pressure',63:'Bass — Kick punch, bass body',125:'Low Mid — Warmth, muddiness',250:'Mid — Vocal body, boxiness',500:'Mid — Guitar body, nasal',1000:'Upper Mid — Presence, telephone',2000:'High Mid — Attack, sibilance start',4000:'High — Snare attack, sibilance',8000:'Air — Cymbal sheen, brilliance',16000:'Air — Sparkle, openness'};
 const OCTS=[20,31,63,125,250,500,1000,2000,4000,8000,16000,20000];
 const QFREQS=[63,125,250,500,1000,2000,4000,8000,16000];
+const EQ_DB_OPTIONS=[3,6,10];
 
-let actx=null;
-let noiseSource=null,noiseGainNode=null,eqFilter=null;
-let osc=null,oscGain=null;
-let quizNoiseSource=null,quizNoiseGain=null,quizEqFilter=null;
-let quizToneOsc=null,quizToneGain=null;
+const T={
+  ko:{title:'🎚️ 주파수 트레이너',sub:'음향 엔지니어를 위한 청음 훈련 툴',lang:'English',
+    themeLight:'☀️ 라이트 모드',themeDark:'🌙 다크 모드',
+    tab0:'핑크노이즈 EQ',tab1:'주파수 발생기',tab2:'청음 퀴즈',
+    noiseOn:'핑크노이즈 재생',noiseOff:'핑크노이즈 정지',
+    vol:'볼륨',freqSel:'주파수 선택',boost:'BOOST',cut:'CUT',
+    statusInit:'핑크노이즈를 먼저 재생하세요',
+    toneOn:'톤 재생',toneOff:'톤 정지',
+    qtTone:'순음 퀴즈',qtPink:'핑크노이즈 EQ 퀴즈',
+    correct:'정답',total:'총 문제',rate:'정답률',
+    qTone:'이 주파수는 어느 대역일까요?',qPink:'어느 주파수가 변경됐을까요?',
+    hint:'재생 버튼을 눌러 들어보세요',
+    play:'들어보기',stop:'정지',next:'다음 문제',
+    ok:'정답!',ng:'오답 — 정답은 ',
+    eqOptTitle:'문제 유형 선택 (중복 선택 가능)',
+    boostLabel:'BOOST',cutLabel:'CUT',
+  },
+  en:{title:'🎚️ Frequency Trainer',sub:'Ear Training Tool for Sound Engineers',lang:'한국어',
+    themeLight:'☀️ Light Mode',themeDark:'🌙 Dark Mode',
+    tab0:'Pink Noise EQ',tab1:'Tone Generator',tab2:'Ear Training',
+    noiseOn:'Pink Noise ON',noiseOff:'Pink Noise OFF',
+    vol:'Volume',freqSel:'Frequency',boost:'BOOST',cut:'CUT',
+    statusInit:'Play pink noise first',
+    toneOn:'Tone ON',toneOff:'Tone OFF',
+    qtTone:'Pure Tone',qtPink:'Pink Noise EQ',
+    correct:'Correct',total:'Total',rate:'Accuracy',
+    qTone:'Which frequency band is this?',qPink:'Which frequency was changed?',
+    hint:'Press play to listen',
+    play:'Play',stop:'Stop',next:'Next →',
+    ok:'Correct!',ng:'Wrong — Answer: ',
+    eqOptTitle:'Select question types (multiple allowed)',
+    boostLabel:'BOOST',cutLabel:'CUT',
+  }
+};
+
+let lang='ko', darkMode=true;
+let actx=null,noiseSource=null,noiseGainNode=null,eqFilter=null,osc=null,oscGain=null;
+let quizNoiseSource=null,quizNoiseGain=null,quizEqFilter=null,quizToneOsc=null,quizToneGain=null;
 let noiseOn=false,toneOn=false,curEqFreq=1000,curDb=0,curToneFreq=1000;
-let qFreq=0,qAnswered=false,sCorrect=0,sTotal=0;
-let quizType='tone';
-let quizPlaying=false;
+let qFreq=0,qDb=6,qAnswered=false,sCorrect=0,sTotal=0,quizType='tone',quizPlaying=false;
+
+// EQ퀴즈 선택 상태: {boost: [3,6,10], cut: [3,6,10]}
+let eqQuizSel={boost:[6],cut:[]};
+
+function t(k){return T[lang][k];}
+function descs(){return lang==='ko'?DESCS_KO:DESCS_EN;}
+
+function toggleTheme(){
+  darkMode=!darkMode;
+  document.body.classList.toggle('light',!darkMode);
+  document.getElementById('themeBtn').textContent=darkMode?t('themeLight'):t('themeDark');
+}
+
+function toggleLang(){
+  lang=lang==='ko'?'en':'ko';
+  applyLang();
+}
+
+function applyLang(){
+  document.getElementById('mainTitle').textContent=t('title');
+  document.getElementById('mainSub').textContent=t('sub');
+  document.getElementById('langBtn').textContent=t('lang');
+  document.getElementById('themeBtn').textContent=darkMode?t('themeLight'):t('themeDark');
+  document.getElementById('tab0').textContent=t('tab0');
+  document.getElementById('tab1').textContent=t('tab1');
+  document.getElementById('tab2').textContent=t('tab2');
+  document.getElementById('pinkPlayBtn').textContent=noiseOn?t('noiseOff'):t('noiseOn');
+  ['lVol1','lVol2','lVol3'].forEach(id=>document.getElementById(id).textContent=t('vol'));
+  document.getElementById('lFreqSel').textContent=t('freqSel');
+  document.getElementById('lBoost').textContent=t('boost');
+  document.getElementById('lCut').textContent=t('cut');
+  document.getElementById('lCorrect').textContent=t('correct');
+  document.getElementById('lTotal').textContent=t('total');
+  document.getElementById('lRate').textContent=t('rate');
+  document.getElementById('qtTone').textContent=t('qtTone');
+  document.getElementById('qtPink').textContent=t('qtPink');
+  document.getElementById('quizQuestion').textContent=quizType==='tone'?t('qTone'):t('qPink');
+  document.getElementById('quizHint').textContent=t('hint');
+  document.getElementById('listenBtn').textContent=quizPlaying?t('stop'):t('play');
+  document.getElementById('nextBtn').textContent=t('next');
+  document.getElementById('toneBtn').textContent=toneOn?t('toneOff'):t('toneOn');
+  document.getElementById('lEqOptTitle').textContent=t('eqOptTitle');
+  updateStatus();
+  renderEqOptions();
+  document.getElementById('eqDesc').textContent=descs()[curEqFreq]||'';
+  document.getElementById('freqDesc').textContent=getDesc(curToneFreq);
+  document.querySelectorAll('.freq-btn').forEach(b=>{
+    const f=parseInt(b.dataset.f);
+    b.innerHTML=FNAMES[f]+'<br><span style="font-size:10px;color:var(--text3)">'+descs()[f].split('—')[0].trim()+'</span>';
+  });
+}
+
+function renderEqOptions(){
+  const row=document.getElementById('eqOptRow');
+  row.innerHTML='';
+  // BOOST 버튼들
+  EQ_DB_OPTIONS.forEach(db=>{
+    const on=eqQuizSel.boost.includes(db);
+    const b=document.createElement('button');
+    b.className='eq-opt-btn'+(on?' boost-on':'');
+    b.textContent='+'+db+'dB';
+    b.onclick=()=>toggleEqOpt('boost',db);
+    row.appendChild(b);
+  });
+  // 구분선
+  const sep=document.createElement('span');
+  sep.style.cssText='color:var(--text3);font-size:12px;align-self:center;padding:0 4px';
+  sep.textContent='|';
+  row.appendChild(sep);
+  // CUT 버튼들
+  EQ_DB_OPTIONS.forEach(db=>{
+    const on=eqQuizSel.cut.includes(db);
+    const b=document.createElement('button');
+    b.className='eq-opt-btn'+(on?' on':'');
+    b.textContent='-'+db+'dB';
+    b.onclick=()=>toggleEqOpt('cut',db);
+    row.appendChild(b);
+  });
+}
+
+function toggleEqOpt(type,db){
+  const arr=eqQuizSel[type];
+  const idx=arr.indexOf(db);
+  if(idx>=0){
+    // 최소 1개는 선택 유지
+    const total=eqQuizSel.boost.length+eqQuizSel.cut.length;
+    if(total<=1)return;
+    arr.splice(idx,1);
+  } else {
+    arr.push(db);
+  }
+  renderEqOptions();
+  resetScore();
+  nextQuiz();
+}
+
+function getRandomEqQuestion(){
+  // 선택된 boost/cut 중 랜덤
+  const pool=[];
+  eqQuizSel.boost.forEach(db=>pool.push({db,type:'boost'}));
+  eqQuizSel.cut.forEach(db=>pool.push({db,type:'cut'}));
+  return pool[Math.floor(Math.random()*pool.length)];
+}
 
 function ctx(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext)();return actx;}
+function pink(c){const sz=c.sampleRate*3,buf=c.createBuffer(1,sz,c.sampleRate),d=buf.getChannelData(0);let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;for(let i=0;i<sz;i++){const w=Math.random()*2-1;b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.96900*b2+w*.1538520;b3=.86650*b3+w*.3104856;b4=.55000*b4+w*.5329522;b5=-.7616*b5-w*.0168980;d[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*0.11;b6=w*0.115926;}return buf;}
 
-function pink(c){
-  const sz=c.sampleRate*3,buf=c.createBuffer(1,sz,c.sampleRate),d=buf.getChannelData(0);
-  let b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;
-  for(let i=0;i<sz;i++){const w=Math.random()*2-1;b0=.99886*b0+w*.0555179;b1=.99332*b1+w*.0750759;b2=.96900*b2+w*.1538520;b3=.86650*b3+w*.3104856;b4=.55000*b4+w*.5329522;b5=-.7616*b5-w*.0168980;d[i]=(b0+b1+b2+b3+b4+b5+b6+w*.5362)*0.11;b6=w*0.115926;}
-  return buf;
-}
-
-/* 핑크노이즈 EQ 탭 */
 function toggleNoise(){if(noiseOn)stopNoise();else startNoise();}
-function startNoise(){
-  const c=ctx();
-  noiseSource=c.createBufferSource();noiseSource.buffer=pink(c);noiseSource.loop=true;
-  eqFilter=c.createBiquadFilter();eqFilter.type='peaking';eqFilter.frequency.value=curEqFreq;eqFilter.Q.value=1.4;eqFilter.gain.value=curDb;
-  noiseGainNode=c.createGain();noiseGainNode.gain.value=document.getElementById('noiseVol').value/100*0.5;
-  noiseSource.connect(eqFilter);eqFilter.connect(noiseGainNode);noiseGainNode.connect(c.destination);
-  noiseSource.start();noiseOn=true;updateNoiseUI();
-}
-function stopNoise(){
-  if(noiseSource){try{noiseSource.stop();noiseSource.disconnect();}catch(e){}noiseSource=null;}
-  if(eqFilter){eqFilter.disconnect();eqFilter=null;}
-  if(noiseGainNode){noiseGainNode.disconnect();noiseGainNode=null;}
-  noiseOn=false;updateNoiseUI();
-}
+function startNoise(){const c=ctx();noiseSource=c.createBufferSource();noiseSource.buffer=pink(c);noiseSource.loop=true;eqFilter=c.createBiquadFilter();eqFilter.type='peaking';eqFilter.frequency.value=curEqFreq;eqFilter.Q.value=1.4;eqFilter.gain.value=curDb;noiseGainNode=c.createGain();noiseGainNode.gain.value=document.getElementById('noiseVol').value/100*0.5;noiseSource.connect(eqFilter);eqFilter.connect(noiseGainNode);noiseGainNode.connect(c.destination);noiseSource.start();noiseOn=true;updateNoiseUI();}
+function stopNoise(){if(noiseSource){try{noiseSource.stop();noiseSource.disconnect();}catch(e){}noiseSource=null;}if(eqFilter){eqFilter.disconnect();eqFilter=null;}if(noiseGainNode){noiseGainNode.disconnect();noiseGainNode=null;}noiseOn=false;updateNoiseUI();}
 function setNoiseVol(){const v=document.getElementById('noiseVol').value;document.getElementById('noiseVolNum').textContent=v+'%';if(noiseGainNode)noiseGainNode.gain.setTargetAtTime(v/100*0.5,actx.currentTime,0.01);}
-function setFreq(f){curEqFreq=f;if(eqFilter)eqFilter.frequency.setTargetAtTime(f,actx.currentTime,0.01);document.getElementById('eqFreq').textContent=FNAMES[f];document.getElementById('eqDesc').textContent=DESCS[f]||'';document.querySelectorAll('.freq-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.f)===f));updateStatus();}
+function setFreq(f){curEqFreq=f;if(eqFilter)eqFilter.frequency.setTargetAtTime(f,actx.currentTime,0.01);document.getElementById('eqFreq').textContent=FNAMES[f];document.getElementById('eqDesc').textContent=descs()[f]||'';document.querySelectorAll('.freq-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.f)===f));updateStatus();}
 function setDb(db){curDb=db;if(eqFilter)eqFilter.gain.setTargetAtTime(db,actx.currentTime,0.01);const el=document.getElementById('eqDb');el.textContent=(db>0?'+':'')+db+' dB';el.className='eq-db '+(db>0?'boost':db<0?'cut':'flat');document.querySelectorAll('.db-btn').forEach(b=>b.classList.toggle('on',parseFloat(b.textContent)===db));updateStatus();}
-function updateNoiseUI(){const btn=document.getElementById('pinkPlayBtn');btn.textContent=noiseOn?'핑크노이즈 정지':'핑크노이즈 재생';btn.className='play-btn '+(noiseOn?'on':'off');updateStatus();}
-function updateStatus(){const sb=document.getElementById('statusBar');if(!noiseOn){sb.textContent='핑크노이즈를 먼저 재생하세요';return;}sb.textContent=curDb===0?FNAMES[curEqFreq]+' — FLAT':FNAMES[curEqFreq]+' '+(curDb>0?'+':'')+curDb+'dB — '+DESCS[curEqFreq];}
+function updateNoiseUI(){const btn=document.getElementById('pinkPlayBtn');btn.textContent=noiseOn?t('noiseOff'):t('noiseOn');btn.className='play-btn '+(noiseOn?'on':'off');updateStatus();}
+function updateStatus(){const sb=document.getElementById('statusBar');if(!noiseOn){sb.textContent=t('statusInit');return;}sb.textContent=curDb===0?FNAMES[curEqFreq]+' — FLAT':FNAMES[curEqFreq]+' '+(curDb>0?'+':'')+curDb+'dB — '+descs()[curEqFreq];}
 
-/* 주파수 발생기 탭 */
 function fmtF(f){return f>=1000?(f/1000).toFixed(f%1000===0?0:1)+'kHz':f+'Hz';}
-function getDesc(f){const k=Object.keys(DESCS).map(Number).sort((a,b)=>a-b);let c=k[0];for(const x of k)if(Math.abs(x-f)<Math.abs(c-f))c=x;return DESCS[c]||'';}
+function getDesc(f){const d=descs(),k=Object.keys(d).map(Number).sort((a,b)=>a-b);let c=k[0];for(const x of k)if(Math.abs(x-f)<Math.abs(c-f))c=x;return d[c]||'';}
 function fFromSlider(v){const a=Math.log10(20),b=Math.log10(20000);return Math.round(Math.pow(10,a+(v/100)*(b-a)));}
 function sFromF(f){const a=Math.log10(20),b=Math.log10(20000);return((Math.log10(f)-a)/(b-a))*100;}
 function onSlider(){const f=fFromSlider(document.getElementById('freqSlider').value);curToneFreq=f;document.getElementById('freqNum').textContent=fmtF(f);document.getElementById('freqDesc').textContent=getDesc(f);if(toneOn&&osc)osc.frequency.setTargetAtTime(f,actx.currentTime,0.01);document.querySelectorAll('.oct-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.f)===f));}
 function setOct(f){curToneFreq=f;document.getElementById('freqSlider').value=sFromF(f);document.getElementById('freqNum').textContent=fmtF(f);document.getElementById('freqDesc').textContent=getDesc(f);if(toneOn&&osc)osc.frequency.setTargetAtTime(f,actx.currentTime,0.01);document.querySelectorAll('.oct-btn').forEach(b=>b.classList.toggle('on',parseInt(b.dataset.f)===f));}
 function setToneVol(){const v=document.getElementById('tonVol').value;document.getElementById('toneVolNum').textContent=v+'%';if(oscGain)oscGain.gain.setTargetAtTime(v/100*0.4,actx.currentTime,0.01);}
-function toggleTone(){
-  if(toneOn){if(osc){try{osc.stop();osc.disconnect();}catch(e){}osc=null;}if(oscGain){oscGain.disconnect();oscGain=null;}toneOn=false;}
-  else{const c=ctx();osc=c.createOscillator();oscGain=c.createGain();osc.type='sine';osc.frequency.value=curToneFreq;oscGain.gain.value=document.getElementById('tonVol').value/100*0.4;osc.connect(oscGain);oscGain.connect(c.destination);osc.start();toneOn=true;}
-  const btn=document.getElementById('toneBtn');btn.textContent=toneOn?'톤 정지':'톤 재생';btn.className='play-btn '+(toneOn?'on':'off');
-}
+function toggleTone(){if(toneOn){if(osc){try{osc.stop();osc.disconnect();}catch(e){}osc=null;}if(oscGain){oscGain.disconnect();oscGain=null;}toneOn=false;}else{const c=ctx();osc=c.createOscillator();oscGain=c.createGain();osc.type='sine';osc.frequency.value=curToneFreq;oscGain.gain.value=document.getElementById('tonVol').value/100*0.4;osc.connect(oscGain);oscGain.connect(c.destination);osc.start();toneOn=true;}const btn=document.getElementById('toneBtn');btn.textContent=toneOn?t('toneOff'):t('toneOn');btn.className='play-btn '+(toneOn?'on':'off');}
 
-/* 퀴즈 */
-function switchQType(t){
-  quizType=t;
-  stopQuizSound();
-  document.querySelectorAll('.qt-tab').forEach((b,i)=>b.classList.toggle('on',['tone','pink'][i]===t));
-  document.getElementById('quizQuestion').textContent=t==='tone'?'이 주파수는 어느 대역일까요?':'어느 주파수가 +6dB 부스트됐을까요?';
-  document.getElementById('pinkBadge').style.display=t==='pink'?'block':'none';
-  resetScore();
-  nextQuiz();
-}
+function switchQType(qt){quizType=qt;stopQuizSound();
+  document.querySelectorAll('.qt-tab').forEach((b,i)=>b.classList.toggle('on',['tone','pink'][i]===qt));
+  document.getElementById('quizQuestion').textContent=qt==='tone'?t('qTone'):t('qPink');
+  document.getElementById('eqQuizOptions').style.display=qt==='pink'?'block':'none';
+  resetScore();nextQuiz();}
 
 function setQuizVol(){const v=document.getElementById('quizVol').value;document.getElementById('quizVolNum').textContent=v+'%';}
 function getQuizVol(){return document.getElementById('quizVol').value/100;}
@@ -274,33 +427,28 @@ function stopQuizSound(){
   if(quizNoiseGain){quizNoiseGain.disconnect();quizNoiseGain=null;}
   quizPlaying=false;
   const btn=document.getElementById('listenBtn');
-  if(btn){btn.textContent='들어보기';btn.className='listen-btn';}
+  if(btn){btn.textContent=t('play');btn.className='listen-btn';}
 }
 
-function toggleQuizPlay(){
-  if(quizPlaying){stopQuizSound();}
-  else{playQuizSound();}
-}
+function toggleQuizPlay(){if(quizPlaying)stopQuizSound();else playQuizSound();}
 
 function playQuizSound(){
-  stopQuizSound();
-  const c=ctx(),vol=getQuizVol();
+  stopQuizSound();const c=ctx(),vol=getQuizVol();
   if(quizType==='tone'){
     quizToneOsc=c.createOscillator();quizToneGain=c.createGain();
     quizToneOsc.type='sine';quizToneOsc.frequency.value=qFreq;
     quizToneGain.gain.value=vol*0.4;
-    quizToneOsc.connect(quizToneGain);quizToneGain.connect(c.destination);
-    quizToneOsc.start();
+    quizToneOsc.connect(quizToneGain);quizToneGain.connect(c.destination);quizToneOsc.start();
   } else {
     quizNoiseSource=c.createBufferSource();quizNoiseSource.buffer=pink(c);quizNoiseSource.loop=true;
-    quizEqFilter=c.createBiquadFilter();quizEqFilter.type='peaking';quizEqFilter.frequency.value=qFreq;quizEqFilter.Q.value=1.4;quizEqFilter.gain.value=6;
+    quizEqFilter=c.createBiquadFilter();quizEqFilter.type='peaking';
+    quizEqFilter.frequency.value=qFreq;quizEqFilter.Q.value=1.4;quizEqFilter.gain.value=qDb;
     quizNoiseGain=c.createGain();quizNoiseGain.gain.value=vol*0.5;
     quizNoiseSource.connect(quizEqFilter);quizEqFilter.connect(quizNoiseGain);quizNoiseGain.connect(c.destination);
     quizNoiseSource.start();
   }
   quizPlaying=true;
-  const btn=document.getElementById('listenBtn');
-  btn.textContent='정지';btn.className='listen-btn playing';
+  const btn=document.getElementById('listenBtn');btn.textContent=t('stop');btn.className='listen-btn playing';
 }
 
 function resetScore(){sCorrect=0;sTotal=0;document.getElementById('sCorrect').textContent=0;document.getElementById('sTotal').textContent=0;document.getElementById('sRate').textContent='-';}
@@ -308,8 +456,20 @@ function resetScore(){sCorrect=0;sTotal=0;document.getElementById('sCorrect').te
 function nextQuiz(){
   stopQuizSound();qAnswered=false;
   qFreq=QFREQS[Math.floor(Math.random()*QFREQS.length)];
+
+  // EQ 퀴즈면 랜덤으로 boost/cut 선택
+  if(quizType==='pink'){
+    const q=getRandomEqQuestion();
+    qDb=q.type==='boost'?q.db:-q.db;
+    const badge=document.getElementById('quizBadge');
+    badge.style.display='flex';
+    badge.innerHTML=`<span class="badge ${q.type}">${qDb>0?'+':''}${qDb}dB ${q.type.toUpperCase()}</span>`;
+  } else {
+    document.getElementById('quizBadge').style.display='none';
+  }
+
   document.getElementById('quizFreq').textContent='?';
-  document.getElementById('quizHint').textContent='재생 버튼을 눌러 들어보세요';
+  document.getElementById('quizHint').textContent=t('hint');
   document.getElementById('resultMsg').textContent='';document.getElementById('resultMsg').className='result-msg';
   document.getElementById('nextBtn').style.display='none';
   const sh=[...QFREQS].sort(()=>Math.random()-.5).slice(0,6);
@@ -318,32 +478,33 @@ function nextQuiz(){
 }
 
 function answerQuiz(f){
-  if(qAnswered)return;
-  stopQuizSound();
-  qAnswered=true;sTotal++;const ok=f===qFreq;if(ok)sCorrect++;
+  if(qAnswered)return;stopQuizSound();qAnswered=true;sTotal++;
+  const ok=f===qFreq;if(ok)sCorrect++;
   document.getElementById('quizFreq').textContent=FNAMES[qFreq];
-  document.getElementById('quizHint').textContent=DESCS[qFreq];
+  document.getElementById('quizHint').textContent=descs()[qFreq]||'';
   document.querySelectorAll('.quiz-opt').forEach(b=>{const bf=parseInt(b.textContent);if(bf===qFreq)b.classList.add('correct');else if(bf===f&&!ok)b.classList.add('wrong');});
-  const msg=document.getElementById('resultMsg');msg.textContent=ok?'정답!':'오답 — 정답은 '+FNAMES[qFreq];msg.className='result-msg '+(ok?'ok':'ng');
+  const msg=document.getElementById('resultMsg');msg.textContent=ok?t('ok'):t('ng')+FNAMES[qFreq];msg.className='result-msg '+(ok?'ok':'ng');
   document.getElementById('sCorrect').textContent=sCorrect;document.getElementById('sTotal').textContent=sTotal;document.getElementById('sRate').textContent=Math.round(sCorrect/sTotal*100)+'%';
-  document.getElementById('nextBtn').style.display='inline-block';
+  document.getElementById('nextBtn').style.display='inline-block';document.getElementById('nextBtn').textContent=t('next');
   playQuizSound();
 }
 
-function switchTab(t){
+function switchTab(tab){
   stopNoise();if(toneOn)toggleTone();stopQuizSound();
-  document.getElementById('pinkTab').style.display=t==='pink'?'block':'none';
-  document.getElementById('genTab').style.display=t==='gen'?'block':'none';
-  document.getElementById('quizTab').style.display=t==='quiz'?'block':'none';
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',['pink','gen','quiz'][i]===t));
-  if(t==='quiz')nextQuiz();
+  document.getElementById('pinkTab').style.display=tab==='pink'?'block':'none';
+  document.getElementById('genTab').style.display=tab==='gen'?'block':'none';
+  document.getElementById('quizTab').style.display=tab==='quiz'?'block':'none';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',['pink','gen','quiz'][i]===tab));
+  if(tab==='quiz')nextQuiz();
 }
 
-/* 초기화 */
 const fg=document.getElementById('freqGrid');
-FREQS.forEach(f=>{const b=document.createElement('button');b.className='freq-btn'+(f===1000?' on':'');b.dataset.f=f;b.innerHTML=FNAMES[f]+'<br><span style="font-size:10px;color:#bbb">'+DESCS[f].split('—')[0].trim()+'</span>';b.onclick=()=>setFreq(f);fg.appendChild(b);});
+FREQS.forEach(f=>{const b=document.createElement('button');b.className='freq-btn'+(f===1000?' on':'');b.dataset.f=f;b.innerHTML=FNAMES[f]+'<br><span style="font-size:10px;color:var(--text3)">'+DESCS_KO[f].split('—')[0].trim()+'</span>';b.onclick=()=>setFreq(f);fg.appendChild(b);});
 const og=document.getElementById('octGrid');
 OCTS.forEach(f=>{const b=document.createElement('button');b.className='oct-btn';b.dataset.f=f;b.textContent=fmtF(f);b.onclick=()=>setOct(f);og.appendChild(b);});
+
+applyLang();
+renderEqOptions();
 </script>
 </body>
 </html>
