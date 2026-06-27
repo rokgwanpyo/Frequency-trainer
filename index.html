@@ -201,6 +201,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
       <div class="quiz-type-tabs">
         <button class="qt-tab on" id="qtTone" onclick="switchQType('tone')"></button>
         <button class="qt-tab" id="qtPink" onclick="switchQType('pink')"></button>
+        <button class="qt-tab" id="qtFx" onclick="switchQType('fx')"></button>
       </div>
 
       <div class="score-row">
@@ -263,9 +264,9 @@ const T={
     vol:'볼륨',freqSel:'주파수 선택',boost:'BOOST',cut:'CUT',
     statusInit:'핑크노이즈를 먼저 재생하세요',
     toneOn:'톤 재생',toneOff:'톤 정지',
-    qtTone:'순음 퀴즈',qtPink:'핑크노이즈 EQ 퀴즈',
+    qtTone:'순음 퀴즈',qtPink:'핑크노이즈 EQ 퀴즈',qtFx:'음향 효과 퀴즈',
     correct:'정답',total:'총 문제',rate:'정답률',
-    qTone:'이 주파수는 어느 대역일까요?',qPink:'어느 주파수가 변경됐을까요?',
+    qTone:'이 주파수는 어느 대역일까요?',qPink:'어느 주파수가 변경됐을까요?',qFx:'이 음향 효과는 무엇일까요?',
     hint:'재생 버튼을 눌러 들어보세요',
     play:'들어보기',stop:'정지',next:'다음 문제',
     ok:'정답!',ng:'오답 — 정답은 ',
@@ -279,9 +280,9 @@ const T={
     vol:'Volume',freqSel:'Frequency',boost:'BOOST',cut:'CUT',
     statusInit:'Play pink noise first',
     toneOn:'Tone ON',toneOff:'Tone OFF',
-    qtTone:'Pure Tone',qtPink:'Pink Noise EQ',
+    qtTone:'Pure Tone',qtPink:'Pink Noise EQ',qtFx:'FX Quiz',
     correct:'Correct',total:'Total',rate:'Accuracy',
-    qTone:'Which frequency band is this?',qPink:'Which frequency was changed?',
+    qTone:'Which frequency band is this?',qPink:'Which frequency was changed?',qFx:'What audio effect is this?',
     hint:'Press play to listen',
     play:'Play',stop:'Stop',next:'Next →',
     ok:'Correct!',ng:'Wrong — Answer: ',
@@ -331,6 +332,7 @@ function applyLang(){
   document.getElementById('lRate').textContent=t('rate');
   document.getElementById('qtTone').textContent=t('qtTone');
   document.getElementById('qtPink').textContent=t('qtPink');
+  document.getElementById('qtFx').textContent=t('qtFx');
   document.getElementById('quizQuestion').textContent=quizType==='tone'?t('qTone'):t('qPink');
   document.getElementById('quizHint').textContent=t('hint');
   document.getElementById('listenBtn').textContent=quizPlaying?t('stop'):t('play');
@@ -422,11 +424,13 @@ function setOct(f){curToneFreq=f;document.getElementById('freqSlider').value=sFr
 function setToneVol(){const v=document.getElementById('tonVol').value;document.getElementById('toneVolNum').textContent=v+'%';if(oscGain)oscGain.gain.setTargetAtTime(v/100*0.4,actx.currentTime,0.01);}
 function toggleTone(){if(toneOn){if(osc){try{osc.stop();osc.disconnect();}catch(e){}osc=null;}if(oscGain){oscGain.disconnect();oscGain=null;}toneOn=false;}else{const c=ctx();osc=c.createOscillator();oscGain=c.createGain();osc.type='sine';osc.frequency.value=curToneFreq;oscGain.gain.value=document.getElementById('tonVol').value/100*0.4;osc.connect(oscGain);oscGain.connect(c.destination);osc.start();toneOn=true;}const btn=document.getElementById('toneBtn');btn.textContent=toneOn?t('toneOff'):t('toneOn');btn.className='play-btn '+(toneOn?'on':'off');}
 
-function switchQType(qt){quizType=qt;stopQuizSound();
-  document.querySelectorAll('.qt-tab').forEach((b,i)=>b.classList.toggle('on',['tone','pink'][i]===qt));
-  document.getElementById('quizQuestion').textContent=qt==='tone'?t('qTone'):t('qPink');
+function switchQType(qt){
+  quizType=qt;stopQuizSound();
+  document.querySelectorAll('.qt-tab').forEach((b,i)=>b.classList.toggle('on',['tone','pink','fx'][i]===qt));
+  document.getElementById('quizQuestion').textContent=qt==='tone'?t('qTone'):qt==='pink'?t('qPink'):t('qFx');
   document.getElementById('eqQuizOptions').style.display=qt==='pink'?'block':'none';
-  resetScore();nextQuiz();}
+  resetScore();nextQuiz();
+}
 
 function setQuizVol(){const v=document.getElementById('quizVol').value;document.getElementById('quizVolNum').textContent=v+'%';}
 function getQuizVol(){return document.getElementById('quizVol').value/100;}
@@ -437,6 +441,7 @@ function stopQuizSound(){
   if(quizNoiseSource){try{quizNoiseSource.stop();quizNoiseSource.disconnect();}catch(e){}quizNoiseSource=null;}
   if(quizEqFilter){quizEqFilter.disconnect();quizEqFilter=null;}
   if(quizNoiseGain){quizNoiseGain.disconnect();quizNoiseGain=null;}
+  if(quizType==='fx'){fxNodes.forEach(n=>{try{n.stop?n.stop():n.disconnect();}catch(e){}});fxNodes=[];fxPlaying=null;}
   quizPlaying=false;
   const btn=document.getElementById('listenBtn');
   if(btn){btn.textContent=t('play');btn.className='listen-btn';}
@@ -446,6 +451,71 @@ function toggleQuizPlay(){if(quizPlaying)stopQuizSound();else playQuizSound();}
 
 function playQuizSound(){
   stopQuizSound();const c=ctx(),vol=getQuizVol();
+  if(quizType==='fx'){
+    // FX 퀴즈 — playFx 방식으로 재생 (quizNodes에 저장)
+    fxNodes=[];fxPlaying=qFreq;
+    const mv=vol;const stop=()=>{stopQuizSound();};
+    const id=qFreq;
+    if(id==='doppler'){
+      const merger=c.createChannelMerger(2);
+      const oL=c.createOscillator(),gL=c.createGain(),oR=c.createOscillator(),gR=c.createGain();
+      oL.type='sine';oL.frequency.value=660;oR.type='sine';oR.frequency.value=660;
+      gL.gain.value=mv;gR.gain.value=0;
+      oL.connect(gL);oR.connect(gR);gL.connect(merger,0,0);gR.connect(merger,0,1);merger.connect(c.destination);
+      oL.start();oR.start();
+      oL.frequency.linearRampToValueAtTime(880,c.currentTime+0.5);oR.frequency.linearRampToValueAtTime(880,c.currentTime+0.5);
+      setTimeout(()=>{gL.gain.linearRampToValueAtTime(0,c.currentTime+0.6);gR.gain.linearRampToValueAtTime(mv,c.currentTime+0.6);oL.frequency.linearRampToValueAtTime(440,c.currentTime+0.6);oR.frequency.linearRampToValueAtTime(440,c.currentTime+0.6);},400);
+      quizToneOsc=oL;quizToneGain=gL;fxNodes=[oL,oR,gL,gR,merger];
+    } else if(id==='vibrato'){
+      const o=c.createOscillator(),lfo=c.createOscillator(),lfoG=c.createGain(),g=c.createGain();
+      o.type='sine';o.frequency.value=440;g.gain.value=0.3*mv;lfo.type='sine';lfo.frequency.value=6;lfoG.gain.value=20;
+      lfo.connect(lfoG);lfoG.connect(o.frequency);o.connect(g);g.connect(c.destination);lfo.start();o.start();
+      fxNodes=[o,lfo,g,lfoG];
+    } else if(id==='tremolo'){
+      const o=c.createOscillator(),lfo=c.createOscillator(),lfoG=c.createGain(),g=c.createGain();
+      o.type='sine';o.frequency.value=440;g.gain.value=0.3*mv;lfo.type='sine';lfo.frequency.value=7;lfoG.gain.value=0.3*mv;
+      lfo.connect(lfoG);lfoG.connect(g.gain);o.connect(g);g.connect(c.destination);lfo.start();o.start();
+      fxNodes=[o,lfo,g,lfoG];
+    } else if(id==='reverb'){
+      const bufSize=c.sampleRate*3,rb=c.createBuffer(2,bufSize,c.sampleRate);
+      for(let ch=0;ch<2;ch++){const d=rb.getChannelData(ch);for(let i=0;i<bufSize;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/bufSize,2);}
+      const conv=c.createConvolver();conv.buffer=rb;
+      const o=c.createOscillator(),g=c.createGain(),dg=c.createGain();
+      o.type='triangle';o.frequency.value=440;g.gain.value=0.2*mv;dg.gain.value=0.6*mv;
+      o.connect(g);g.connect(c.destination);g.connect(conv);conv.connect(dg);dg.connect(c.destination);
+      o.start();o.stop(c.currentTime+0.3);fxNodes=[o,g,conv,dg];
+    } else if(id==='delay'){
+      const delay=c.createDelay(2);delay.delayTime.value=0.5;const fb=c.createGain();fb.gain.value=0.55;
+      const g=c.createGain();g.gain.value=0.3*mv;const o=c.createOscillator();o.type='sine';o.frequency.value=660;
+      o.connect(g);g.connect(c.destination);g.connect(delay);delay.connect(fb);fb.connect(delay);delay.connect(c.destination);
+      o.start();o.stop(c.currentTime+0.15);fxNodes=[o,g,delay,fb];
+    } else if(id==='flanger'){
+      const o=c.createOscillator(),g=c.createGain(),dl=c.createDelay(0.02),lfo=c.createOscillator(),lfoG=c.createGain(),fb=c.createGain();
+      o.type='sawtooth';o.frequency.value=220;g.gain.value=0.25*mv;lfo.type='sine';lfo.frequency.value=0.5;lfoG.gain.value=0.005;dl.delayTime.value=0.005;fb.gain.value=0.7;
+      lfo.connect(lfoG);lfoG.connect(dl.delayTime);o.connect(g);g.connect(c.destination);g.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(c.destination);
+      lfo.start();o.start();fxNodes=[o,g,dl,lfo,lfoG,fb];
+    } else if(id==='chorus'){
+      const o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=440;g.gain.value=0.2*mv;
+      const voices=[0,5,-5,8].map(det=>{const vo=c.createOscillator(),vg=c.createGain(),lfo=c.createOscillator(),lg=c.createGain();vo.type='sine';vo.frequency.value=440+det;vg.gain.value=0.08*mv;lfo.type='sine';lfo.frequency.value=0.3+Math.random()*0.2;lg.gain.value=2;lfo.connect(lg);lg.connect(vo.frequency);vo.connect(vg);vg.connect(c.destination);lfo.start();vo.start();return[vo,vg,lfo,lg];});
+      o.connect(g);g.connect(c.destination);o.start();fxNodes=[o,g,...voices.flat()];
+    } else if(id==='popping'){
+      const playPop=()=>{const buf=c.createBuffer(1,c.sampleRate*0.12,c.sampleRate),d=buf.getChannelData(0);for(let i=0;i<buf.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/buf.length,1.5);const src=c.createBufferSource(),filter=c.createBiquadFilter(),g=c.createGain();filter.type='lowpass';filter.frequency.value=180;g.gain.value=0.9*mv;src.buffer=buf;src.connect(filter);filter.connect(g);g.connect(c.destination);src.start();fxNodes.push(src,filter,g);};
+      playPop();setTimeout(playPop,800);setTimeout(playPop,1400);
+    } else if(id==='distortion'){
+      const o=c.createOscillator(),g=c.createGain(),ws=c.createWaveShaper(),outG=c.createGain();
+      o.type='sine';o.frequency.value=220;g.gain.value=20;outG.gain.value=0.1*mv;
+      const curve=new Float32Array(256);for(let i=0;i<256;i++){const x=i*2/256-1;curve[i]=Math.max(-1,Math.min(1,x*3));}ws.curve=curve;
+      o.connect(g);g.connect(ws);ws.connect(outG);outG.connect(c.destination);o.start();fxNodes=[o,g,ws,outG];
+    } else if(id==='feedback'){
+      const o=c.createOscillator(),g=c.createGain(),dl=c.createDelay(0.5),fb=c.createGain();
+      o.type='sine';o.frequency.value=1000;g.gain.value=0.1*mv;dl.delayTime.value=0.02;fb.gain.value=0.95;
+      o.connect(g);g.connect(c.destination);g.connect(dl);dl.connect(fb);fb.connect(dl);dl.connect(c.destination);
+      o.start();o.stop(c.currentTime+0.05);fxNodes=[o,g,dl,fb];
+    }
+    quizPlaying=true;
+    const btn=document.getElementById('listenBtn');btn.textContent=t('stop');btn.className='listen-btn playing';
+    return;
+  }
   if(quizType==='tone'){
     quizToneOsc=c.createOscillator();quizToneGain=c.createGain();
     quizToneOsc.type='sine';quizToneOsc.frequency.value=qFreq;
@@ -467,9 +537,23 @@ function resetScore(){sCorrect=0;sTotal=0;document.getElementById('sCorrect').te
 
 function nextQuiz(){
   stopQuizSound();qAnswered=false;
-  qFreq=QFREQS[Math.floor(Math.random()*QFREQS.length)];
 
-  // EQ 퀴즈면 랜덤으로 boost/cut 선택
+  if(quizType==='fx'){
+    const fxList=lang==='ko'?FX_KO:FX_EN;
+    const pick=fxList[Math.floor(Math.random()*fxList.length)];
+    qFreq=pick.id;
+    document.getElementById('quizBadge').style.display='none';
+    document.getElementById('quizFreq').textContent='?';
+    document.getElementById('quizHint').textContent=t('hint');
+    document.getElementById('resultMsg').textContent='';document.getElementById('resultMsg').className='result-msg';
+    document.getElementById('nextBtn').style.display='none';
+    const sh=[...fxList].sort(()=>Math.random()-.5).slice(0,6);
+    if(!sh.find(f=>f.id===pick.id))sh[0]=pick;sh.sort((a,b)=>a.name.localeCompare(b.name));
+    document.getElementById('quizGrid').innerHTML=sh.map(f=>`<button class="quiz-opt" onclick="answerFxQuiz('${f.id}','${f.name.replace(/'/g,"\\'")}')">${f.name}</button>`).join('');
+    return;
+  }
+
+  qFreq=QFREQS[Math.floor(Math.random()*QFREQS.length)];
   if(quizType==='pink'){
     const q=getRandomEqQuestion();
     qDb=q.type==='boost'?q.db:-q.db;
@@ -479,7 +563,6 @@ function nextQuiz(){
   } else {
     document.getElementById('quizBadge').style.display='none';
   }
-
   document.getElementById('quizFreq').textContent='?';
   document.getElementById('quizHint').textContent=t('hint');
   document.getElementById('resultMsg').textContent='';document.getElementById('resultMsg').className='result-msg';
@@ -487,6 +570,28 @@ function nextQuiz(){
   const sh=[...QFREQS].sort(()=>Math.random()-.5).slice(0,6);
   if(!sh.includes(qFreq))sh[0]=qFreq;sh.sort((a,b)=>a-b);
   document.getElementById('quizGrid').innerHTML=sh.map(f=>`<button class="quiz-opt" onclick="answerQuiz(${f})">${FNAMES[f]}</button>`).join('');
+}
+
+function answerFxQuiz(id,name){
+  if(qAnswered)return;stopQuizSound();qAnswered=true;sTotal++;
+  const ok=id===qFreq;if(ok)sCorrect++;
+  const fxList=lang==='ko'?FX_KO:FX_EN;
+  const correct=fxList.find(f=>f.id===qFreq);
+  document.getElementById('quizFreq').textContent=correct?correct.name:'?';
+  document.getElementById('quizHint').textContent=correct?correct.desc:'';
+  document.querySelectorAll('.quiz-opt').forEach(b=>{
+    if(b.textContent===correct?.name)b.classList.add('correct');
+    else if(b.textContent===name&&!ok)b.classList.add('wrong');
+  });
+  const msg=document.getElementById('resultMsg');
+  msg.textContent=ok?t('ok'):t('ng')+(correct?.name||'');
+  msg.className='result-msg '+(ok?'ok':'ng');
+  document.getElementById('sCorrect').textContent=sCorrect;
+  document.getElementById('sTotal').textContent=sTotal;
+  document.getElementById('sRate').textContent=Math.round(sCorrect/sTotal*100)+'%';
+  document.getElementById('nextBtn').style.display='inline-block';
+  document.getElementById('nextBtn').textContent=t('next');
+  playQuizSound();
 }
 
 function answerQuiz(f){
