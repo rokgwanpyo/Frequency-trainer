@@ -118,7 +118,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <div class="header">
   <h1 id="mainTitle">🎚️ 주파수 트레이너</h1>
   <p class="sub" id="mainSub">음향 엔지니어를 위한 청음 훈련 툴</p>
-  <p class="credit">MADE BY : HGP 🇰🇷</p>
+  <p class="credit">MADE BY : HGP 🇰🇷 &nbsp;|&nbsp; CONTACT : jw2078@naver.com</p>
   <div class="header-btns">
     <button class="hbtn" id="langBtn" onclick="toggleLang()">English</button>
     <button class="hbtn" id="themeBtn" onclick="toggleTheme()">☀️ 라이트 모드</button>
@@ -130,6 +130,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <button class="tab on" id="tab0" onclick="switchTab('pink')"></button>
     <button class="tab" id="tab1" onclick="switchTab('gen')"></button>
     <button class="tab" id="tab2" onclick="switchTab('quiz')"></button>
+    <button class="tab" id="tab3" onclick="switchTab('fx')"></button>
   </div>
 
   <!-- 핑크노이즈 EQ -->
@@ -236,6 +237,15 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   </div>
 </div>
 
+  <!-- 음향 효과 -->
+  <div id="fxTab" style="display:none">
+    <div class="card">
+      <div class="sec-title" id="lFxTitle" style="margin-bottom:16px"></div>
+      <div id="fxGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>
+    </div>
+  </div>
+</div>
+
 <script>
 const FREQS=[31,63,125,250,500,1000,2000,4000,8000,16000];
 const FNAMES={31:'31Hz',63:'63Hz',125:'125Hz',250:'250Hz',500:'500Hz',1000:'1kHz',2000:'2kHz',4000:'4kHz',8000:'8kHz',16000:'16kHz'};
@@ -327,6 +337,8 @@ function applyLang(){
   document.getElementById('nextBtn').textContent=t('next');
   document.getElementById('toneBtn').textContent=toneOn?t('toneOff'):t('toneOn');
   document.getElementById('lEqOptTitle').textContent=t('eqOptTitle');
+  document.getElementById('tab3').textContent=lang==='ko'?'음향 효과':'FX Library';
+  renderFxGrid();
   updateStatus();
   renderEqOptions();
   document.getElementById('eqDesc').textContent=descs()[curEqFreq]||'';
@@ -490,13 +502,238 @@ function answerQuiz(f){
 }
 
 function switchTab(tab){
-  stopNoise();if(toneOn)toggleTone();stopQuizSound();
+  stopNoise();if(toneOn)toggleTone();stopQuizSound();stopAllFx();
   document.getElementById('pinkTab').style.display=tab==='pink'?'block':'none';
   document.getElementById('genTab').style.display=tab==='gen'?'block':'none';
   document.getElementById('quizTab').style.display=tab==='quiz'?'block':'none';
-  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',['pink','gen','quiz'][i]===tab));
+  document.getElementById('fxTab').style.display=tab==='fx'?'block':'none';
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',['pink','gen','quiz','fx'][i]===tab));
   if(tab==='quiz')nextQuiz();
 }
+
+const FX_KO=[
+  {id:'doppler',name:'도플러 효과',desc:'소리가 왼쪽에서 오른쪽으로 빠르게 지나가는 느낌'},
+  {id:'vibrato',name:'비브라토',desc:'피치가 빠르게 흔들리는 효과'},
+  {id:'tremolo',name:'트레몰로',desc:'볼륨이 빠르게 흔들리는 효과'},
+  {id:'reverb',name:'리버브 (홀 잔향)',desc:'넓은 공간의 잔향 시뮬레이션'},
+  {id:'delay',name:'딜레이',desc:'소리가 일정 간격으로 반복되는 효과'},
+  {id:'flanger',name:'플랜저',desc:'Wobbly한 금속성 스윕 효과'},
+  {id:'chorus',name:'코러스',desc:'소리가 겹쳐 두꺼워지는 효과'},
+  {id:'popping',name:'팝핑 노이즈',desc:'마이크 팝 노이즈 시뮬레이션'},
+  {id:'distortion',name:'디스토션',desc:'과부하로 인한 찌그러진 소리'},
+  {id:'feedback',name:'하울링 시뮬레이션',desc:'피드백 루프로 인한 하울링'},
+];
+const FX_EN=[
+  {id:'doppler',name:'Doppler Effect',desc:'Sound passing from left to right rapidly'},
+  {id:'vibrato',name:'Vibrato',desc:'Rapid pitch oscillation effect'},
+  {id:'tremolo',name:'Tremolo',desc:'Rapid volume oscillation effect'},
+  {id:'reverb',name:'Reverb (Hall)',desc:'Large hall reverb simulation'},
+  {id:'delay',name:'Delay',desc:'Sound repeating at a fixed interval'},
+  {id:'flanger',name:'Flanger',desc:'Wobbly metallic sweep effect'},
+  {id:'chorus',name:'Chorus',desc:'Thickening sound by layering'},
+  {id:'popping',name:'Popping Noise',desc:'Mic pop noise simulation'},
+  {id:'distortion',name:'Distortion',desc:'Overloaded distorted sound'},
+  {id:'feedback',name:'Feedback / Howling',desc:'Feedback loop howling simulation'},
+];
+
+let fxNodes=[];
+let fxPlaying=null;
+
+function stopAllFx(){
+  fxNodes.forEach(n=>{try{n.stop?n.stop():n.disconnect();}catch(e){}});
+  fxNodes=[];fxPlaying=null;
+  document.querySelectorAll('.fx-btn').forEach(b=>{b.textContent=b.dataset.play;b.className='fx-btn';});
+}
+
+
+
+function playFx(id,btn){
+  if(fxPlaying===id){stopAllFx();return;}
+  stopAllFx();
+  fxPlaying=id;
+  btn.textContent=btn.dataset.stop;
+  btn.classList.add('playing');
+  const c=ctx();
+  const stop=()=>{stopAllFx();};
+  const mv=getMV();
+
+  if(id==='doppler'){
+    const c2=ctx();
+    const merger=c2.createChannelMerger(2);
+    const oL=c2.createOscillator(),gL=c2.createGain();
+    const oR=c2.createOscillator(),gR=c2.createGain();
+    oL.type='sine';oL.frequency.value=660;
+    oR.type='sine';oR.frequency.value=660;
+    gL.gain.value=mv;gR.gain.value=0;
+    oL.connect(gL);oR.connect(gR);
+    gL.connect(merger,0,0);gR.connect(merger,0,1);
+    merger.connect(c2.destination);
+    oL.start();oR.start();
+    // 왼쪽 → 오른쪽 패닝 + 주파수 도플러 변화
+    oL.frequency.linearRampToValueAtTime(880,c2.currentTime+0.5);
+    oR.frequency.linearRampToValueAtTime(880,c2.currentTime+0.5);
+    gL.gain.linearRampToValueAtTime(mv,c2.currentTime+0.3);
+    gR.gain.linearRampToValueAtTime(0,c2.currentTime+0.3);
+    setTimeout(()=>{
+      gL.gain.linearRampToValueAtTime(0,c2.currentTime+0.6);
+      gR.gain.linearRampToValueAtTime(mv,c2.currentTime+0.6);
+      oL.frequency.linearRampToValueAtTime(440,c2.currentTime+0.6);
+      oR.frequency.linearRampToValueAtTime(440,c2.currentTime+0.6);
+    },400);
+    fxNodes=[oL,oR,gL,gR,merger];setTimeout(stop,2500);
+  }
+  else if(id==='vibrato'){
+    const o=c.createOscillator(),lfo=c.createOscillator(),lfoG=c.createGain(),g=c.createGain();
+    o.type='sine';o.frequency.value=440;g.gain.value=0.3*mv;
+    lfo.type='sine';lfo.frequency.value=6;lfoG.gain.value=20;
+    lfo.connect(lfoG);lfoG.connect(o.frequency);
+    o.connect(g);g.connect(c.destination);lfo.start();o.start();
+    fxNodes=[o,lfo,g,lfoG];setTimeout(stop,3000);
+  }
+  else if(id==='tremolo'){
+    const o=c.createOscillator(),lfo=c.createOscillator(),lfoG=c.createGain(),g=c.createGain();
+    o.type='sine';o.frequency.value=440;g.gain.value=0.3*mv;
+    lfo.type='sine';lfo.frequency.value=7;lfoG.gain.value=0.3*mv;
+    lfo.connect(lfoG);lfoG.connect(g.gain);
+    o.connect(g);g.connect(c.destination);lfo.start();o.start();
+    fxNodes=[o,lfo,g,lfoG];setTimeout(stop,3000);
+  }
+  else if(id==='reverb'){
+    const bufSize=c.sampleRate*3;
+    const reverbBuf=c.createBuffer(2,bufSize,c.sampleRate);
+    for(let ch=0;ch<2;ch++){const d=reverbBuf.getChannelData(ch);for(let i=0;i<bufSize;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/bufSize,2);}
+    const conv=c.createConvolver();conv.buffer=reverbBuf;
+    const o=c.createOscillator(),g=c.createGain(),dg=c.createGain();
+    o.type='triangle';o.frequency.value=440;g.gain.value=0.2*mv;dg.gain.value=0.6*mv;
+    o.connect(g);g.connect(c.destination);g.connect(conv);conv.connect(dg);dg.connect(c.destination);
+    o.start();o.stop(c.currentTime+0.3);
+    fxNodes=[o,g,conv,dg];setTimeout(stop,4000);
+  }
+  else if(id==='delay'){
+    const delay=c.createDelay(2);delay.delayTime.value=0.5;
+    const feedback=c.createGain();feedback.gain.value=0.55;
+    const g=c.createGain();g.gain.value=0.3*mv;
+    const o=c.createOscillator();o.type='sine';o.frequency.value=660;
+    o.connect(g);g.connect(c.destination);g.connect(delay);delay.connect(feedback);feedback.connect(delay);delay.connect(c.destination);
+    o.start();o.stop(c.currentTime+0.15);
+    fxNodes=[o,g,delay,feedback];setTimeout(stop,5000);
+  }
+  else if(id==='flanger'){
+    const o=c.createOscillator(),g=c.createGain(),delay=c.createDelay(0.02);
+    const lfo=c.createOscillator(),lfoG=c.createGain(),feedback=c.createGain();
+    o.type='sawtooth';o.frequency.value=220;g.gain.value=0.25*mv;
+    lfo.type='sine';lfo.frequency.value=0.5;lfoG.gain.value=0.005;delay.delayTime.value=0.005;
+    feedback.gain.value=0.7;
+    lfo.connect(lfoG);lfoG.connect(delay.delayTime);
+    o.connect(g);g.connect(c.destination);g.connect(delay);delay.connect(feedback);feedback.connect(delay);delay.connect(c.destination);
+    lfo.start();o.start();
+    fxNodes=[o,g,delay,lfo,lfoG,feedback];setTimeout(stop,4000);
+  }
+  else if(id==='chorus'){
+    const o=c.createOscillator(),g=c.createGain();
+    o.type='sine';o.frequency.value=440;g.gain.value=0.2*mv;
+    const voices=[0,5,-5,8].map(det=>{
+      const vo=c.createOscillator(),vg=c.createGain();
+      const lfo=c.createOscillator(),lg=c.createGain();
+      vo.type='sine';vo.frequency.value=440+det;vg.gain.value=0.08*mv;
+      lfo.type='sine';lfo.frequency.value=0.3+Math.random()*0.2;lg.gain.value=2;
+      lfo.connect(lg);lg.connect(vo.frequency);vo.connect(vg);vg.connect(c.destination);
+      lfo.start();vo.start();return[vo,vg,lfo,lg];
+    });
+    o.connect(g);g.connect(c.destination);o.start();
+    fxNodes=[o,g,...voices.flat()];setTimeout(stop,4000);
+  }
+  else if(id==='popping'){
+    const playPop=()=>{
+      const buf=c.createBuffer(1,c.sampleRate*0.12,c.sampleRate);
+      const d=buf.getChannelData(0);
+      for(let i=0;i<buf.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/buf.length,1.5);
+      const src=c.createBufferSource(),filter=c.createBiquadFilter(),g=c.createGain();
+      filter.type='lowpass';filter.frequency.value=180;g.gain.value=0.9*mv;
+      src.buffer=buf;src.connect(filter);filter.connect(g);g.connect(c.destination);
+      src.start();fxNodes.push(src,filter,g);
+    };
+    playPop();
+    setTimeout(playPop,800);
+    setTimeout(playPop,1400);
+    setTimeout(playPop,2500);
+    setTimeout(playPop,3100);
+    setTimeout(stop,4000);
+  }
+  else if(id==='distortion'){
+    const o=c.createOscillator(),g=c.createGain(),ws=c.createWaveShaper(),outG=c.createGain();
+    o.type='sine';o.frequency.value=220;g.gain.value=20;outG.gain.value=0.1*mv;
+    const curve=new Float32Array(256);
+    for(let i=0;i<256;i++){const x=i*2/256-1;curve[i]=Math.max(-1,Math.min(1,x*3));}
+    ws.curve=curve;
+    o.connect(g);g.connect(ws);ws.connect(outG);outG.connect(c.destination);o.start();
+    fxNodes=[o,g,ws,outG];setTimeout(stop,3000);
+  }
+  else if(id==='feedback'){
+    const o=c.createOscillator(),g=c.createGain(),delay=c.createDelay(0.5),fb=c.createGain();
+    o.type='sine';o.frequency.value=1000;g.gain.value=0.1*mv;delay.delayTime.value=0.02;fb.gain.value=0.95;
+    o.connect(g);g.connect(c.destination);g.connect(delay);delay.connect(fb);fb.connect(delay);delay.connect(c.destination);
+    o.start();o.stop(c.currentTime+0.05);
+    fxNodes=[o,g,delay,fb];setTimeout(stop,3000);
+  }
+}
+
+function renderFxGrid(){
+  const list=lang==='ko'?FX_KO:FX_EN;
+  const grid=document.getElementById('fxGrid');
+  const playTxt=lang==='ko'?'재생':'Play';
+  const stopTxt=lang==='ko'?'정지':'Stop';
+  const volTxt=lang==='ko'?'음향 효과 볼륨':'FX Volume';
+
+  grid.innerHTML=`
+    <div style="grid-column:1/-1;display:flex;align-items:center;gap:10px;background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:10px 14px;margin-bottom:4px">
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap">🔊 ${volTxt}</span>
+      <input type="range" id="fxVol" min="0" max="100" value="70" style="flex:1;accent-color:var(--accent)" oninput="setFxVol()">
+      <span style="font-size:12px;color:var(--text3);min-width:32px;text-align:right" id="fxVolNum">70%</span>
+    </div>
+  `;
+
+  list.forEach(fx=>{
+    const card=document.createElement('div');
+    card.style.cssText='background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;padding:12px;';
+
+    if(fx.dual){
+      const isA=fxPlaying===fx.id+'_a';
+      const isB=fxPlaying===fx.id+'_b';
+      card.style.gridColumn='1/-1';
+      card.innerHTML=`
+        <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">${fx.name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.4">${fx.desc}</div>
+        <div style="display:flex;gap:8px">
+          <button class="fx-btn${isA?' playing':''}" data-id="${fx.id}_a" data-play="${fx.labelA}" data-stop="${stopTxt}"
+            style="flex:1;padding:7px;border-radius:6px;border:0.5px solid ${isA?'var(--danger)':'var(--border2)'};background:${isA?'transparent':'var(--accent)'};color:${isA?'var(--danger)':'#fff'};font-size:12px;cursor:pointer;font-family:inherit"
+            onclick="playFx('${fx.id}_a',this)">${isA?stopTxt:fx.labelA}</button>
+          <button class="fx-btn${isB?' playing':''}" data-id="${fx.id}_b" data-play="${fx.labelB}" data-stop="${stopTxt}"
+            style="flex:1;padding:7px;border-radius:6px;border:0.5px solid ${isB?'var(--danger)':'var(--border2)'};background:${isB?'transparent':'var(--bg2)'};color:${isB?'var(--danger)':'var(--text2)'};font-size:12px;cursor:pointer;font-family:inherit"
+            onclick="playFx('${fx.id}_b',this)">${isB?stopTxt:fx.labelB}</button>
+        </div>`;
+    } else {
+      const isPlaying=fxPlaying===fx.id;
+      card.innerHTML=`
+        <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:4px">${fx.name}</div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.4">${fx.desc}</div>
+        <button class="fx-btn${isPlaying?' playing':''}" data-id="${fx.id}" data-play="${playTxt}" data-stop="${stopTxt}"
+          style="width:100%;padding:6px;border-radius:6px;border:0.5px solid ${isPlaying?'var(--danger)':'var(--border2)'};background:${isPlaying?'transparent':'var(--accent)'};color:${isPlaying?'var(--danger)':'#fff'};font-size:12px;cursor:pointer;font-family:inherit"
+          onclick="playFx('${fx.id}',this)">${isPlaying?stopTxt:playTxt}</button>`;
+    }
+    grid.appendChild(card);
+  });
+  document.getElementById('lFxTitle').textContent=lang==='ko'?'음향 효과 라이브러리':'Audio Effects Library';
+}
+
+let fxVolValue=0.7;
+function setFxVol(){
+  const v=document.getElementById('fxVol').value;
+  document.getElementById('fxVolNum').textContent=v+'%';
+  fxVolValue=v/100;
+}
+function getMV(){return fxVolValue;}
+
 
 const fg=document.getElementById('freqGrid');
 FREQS.forEach(f=>{const b=document.createElement('button');b.className='freq-btn'+(f===1000?' on':'');b.dataset.f=f;b.innerHTML=FNAMES[f]+'<br><span style="font-size:10px;color:var(--text3)">'+DESCS_KO[f].split('—')[0].trim()+'</span>';b.onclick=()=>setFreq(f);fg.appendChild(b);});
@@ -505,6 +742,7 @@ OCTS.forEach(f=>{const b=document.createElement('button');b.className='oct-btn';
 
 applyLang();
 renderEqOptions();
+renderFxGrid();
 </script>
 </body>
 </html>
